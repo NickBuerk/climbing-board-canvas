@@ -9,7 +9,7 @@ use opencv::Result;
 
 fn main() -> Result<()> {
 	// Read the image
-	let mut image_name = "/workspaces/board_image_proc_dev/images/test.jpg".to_string();
+	let mut image_name = "/workspaces/board_image_proc_dev/images/moonboard.jpg".to_string();
 	if let Some(image_name_arg) = args().nth(1) {
 		image_name = image_name_arg;
 	}
@@ -23,7 +23,7 @@ fn main() -> Result<()> {
 	let mut src_gray = Mat::default();
 	cvt_color_def(&src, &mut src_gray, COLOR_BGR2GRAY)?;
     let params: Vector<i32> = vec![].into();
-    let result = imwrite(&image_name, &src_gray, &params);
+    let result = imwrite(&image_name.replace(".jpg", "_out.jpg"), &src_gray, &params);
     match result {
         Ok(success) => { println!("{}", success); }
         Err(err) => { println!("{}", err); }
