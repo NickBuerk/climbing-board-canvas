@@ -11,7 +11,7 @@ use std::env::args;
 
 use opencv::core::{find_file, Point, Scalar, Vector};
 use opencv::imgcodecs::{imread, imwrite, IMREAD_COLOR};
-use opencv::imgproc::{approx_poly_dp, arc_length, canny, cvt_color_def, draw_contours, find_contours_with_hierarchy, threshold, CHAIN_APPROX_SIMPLE, COLOR_BGR2GRAY, LINE_8, RETR_EXTERNAL, THRESH_BINARY};
+use opencv::imgproc::{approx_poly_dp, arc_length, canny, cvt_color_def, draw_contours, find_contours_with_hierarchy, median_blur, CHAIN_APPROX_NONE, COLOR_BGR2GRAY, LINE_8, RETR_TREE};
 use opencv::prelude::*;
 use opencv::Result;
 
@@ -47,33 +47,35 @@ fn process_image(mat: Mat) -> Result<Mat> {
 	let mut output = Mat::default();
 	mat.copy_to(&mut output)?;
 
-	let mut grayscale = Mat::default();
-	cvt_color_def(&mat, &mut grayscale, COLOR_BGR2GRAY)?;
+	let mut colored = Mat::default();
+	let color: i32 = COLOR_BGR2GRAY;
+	cvt_color_def(&mat, &mut colored, color)?;
+	imwrite("images/colored.jpg", &colored, &Vector::default())?;
 
-	let mut img_threshold = Mat::default();
-	threshold(&grayscale, &mut img_threshold, 128.0, 255.0, THRESH_BINARY)?; // Result is only used for THRESH_OTSU and THRESH_TRIANGLE types.
-	imwrite("images/threshold.jpg", &img_threshold, &Vector::default())?;
+	let mut blurred = Mat::default();
+	median_blur(&colored, &mut blurred, 5)?;
+	imwrite("images/blurred.jpg", &blurred, &Vector::default())?;
 
 	let mut edges = Mat::default();
-	canny(&img_threshold, &mut edges, 100.0, 200.0, 3, false)?;
+	canny(&blurred, &mut edges, 85.0, 255.0, 3, false)?;
 	imwrite("images/edges.jpg", &edges, &Vector::default())?;
 
 	let mut img_contours: Vector<Vector<Point>> = Vector::default();
 	let mut heirarchy = Mat::default();
-	find_contours_with_hierarchy(&edges, &mut img_contours, &mut heirarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE, Point::new(0, 0))?;
+	find_contours_with_hierarchy(&edges, &mut img_contours, &mut heirarchy, RETR_TREE, CHAIN_APPROX_NONE, Point::new(0, 0))?;
 
 	for i in 0..img_contours.len() {
 		let contour = img_contours.get(i)?;
 		let mut approx: Vector<Point> = Vector::default();
 		let arc_len = arc_length(&contour, true)?;
-		approx_poly_dp(&contour, &mut approx, 0.01 * arc_len, true)?;
+		approx_poly_dp(&contour, &mut approx, 0.02 * arc_len, true)?;
 		if approx.len() > 2 {
 			let draw: Vector<Vector<Point>> = Vector::from_iter(vec![approx].into_iter());
             draw_contours(
                 &mut output,
                 &draw,
                 0,
-                Scalar::from_array([0.0, 255.0, 0.0, 0.0]),
+                Scalar::from_array([255.0, 0.0, 0.0, 0.0]),
                 2,
                 LINE_8,
                 &heirarchy,
