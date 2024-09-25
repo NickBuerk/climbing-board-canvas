@@ -4,4 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-opencv = "0.92.2"
+image = "0.25.2"
+itertools = "0.13.0"
+nalgebra = "0.33.0"
+ndarray = "0.16.1"
+ort = { version = "2.0.0-rc.5", features = ["load-dynamic"] }
+tch = "0.17.0"
